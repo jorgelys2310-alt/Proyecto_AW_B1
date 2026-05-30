@@ -208,6 +208,7 @@ Proyecto_AW_B1/
 ## Autor
 
 **Jorge Yánez**
+**Analy Yepez**
 
 Asignatura: **Aplicaciones Web**
 Proyecto Final — Primer Bimestre
