@@ -52,7 +52,10 @@ export default class MenuScene extends Phaser.Scene {
             repeat: -1
         });
 
-        const startText = this.add.text(480, 310, "▶ PRESIONA ENTER PARA INICIAR", {
+        const isTouchDevice = ("ontouchstart" in window) || navigator.maxTouchPoints > 0;
+        const startLabel = isTouchDevice ? "▶ TOCA LA PANTALLA PARA INICIAR" : "▶ PRESIONA ENTER PARA INICIAR";
+
+        const startText = this.add.text(480, 310, startLabel, {
             fontSize: "24px",
             fill: "#ff3333",
             fontFamily: "monospace"
@@ -72,8 +75,28 @@ export default class MenuScene extends Phaser.Scene {
             repeat: -1
         });
 
-        this.input.keyboard.once("keydown-ENTER", () => {
+        const isMobile = ("ontouchstart" in window) || navigator.maxTouchPoints > 0;
+
+        const startGame = () => {
+            // Fullscreen + bloqueo de orientación (Chrome Android lo soporta)
+            if (isMobile && document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen()
+                    .then(() => {
+                        if (screen.orientation?.lock) {
+                            screen.orientation.lock("landscape").catch(() => {});
+                        }
+                    })
+                    .catch(() => {});
+            }
             this.scene.start("GameScene");
+        };
+
+        this.input.keyboard.once("keydown-ENTER", startGame);
+
+        // Esperar 800 ms antes de habilitar el toque para evitar que el tap
+        // con el que el usuario abrió la URL en el navegador dispare el inicio.
+        this.time.delayedCall(800, () => {
+            this.input.once("pointerdown", startGame);
         });
     }
 }

@@ -1,224 +1,214 @@
 # Último Tripulante
 
-**Último Tripulante** es un videojuego 2D desarrollado con **Phaser.js** y **JavaScript**, perteneciente al arquetipo **Top-Down Adventure / Survivors-like**.
-El jugador controla al último sobreviviente de una nave espacial dañada, debe recolectar fusibles, reparar consolas y evitar robots enemigos para poder escapar.
+**Último Tripulante** es un videojuego 2D de acción y exploración top-down desarrollado con **Phaser.js** y **JavaScript**, construido para el Proyecto Final de Primer Bimestre de la asignatura **Aplicaciones Web**.
 
 ---
 
-## Descripción del juego
+## Descripción del juego y arquetipo
 
-La nave fue atacada y sus sistemas principales quedaron desactivados. El jugador debe explorar el escenario, recoger fusibles y reparar las consolas distribuidas por la nave. Mientras tanto, robots enemigos patrullan y persiguen al jugador, causando daño si logran alcanzarlo.
+**Arquetipo:** Top-Down Adventure / Survivors-like
 
-El objetivo principal es sobrevivir el tiempo suficiente para reparar los sistemas de la nave y completar la misión.
+La nave espacial fue atacada y sus sistemas quedaron inutilizados. El jugador controla al último tripulante sobreviviente: debe explorar la nave, recolectar fusibles dispersos por los pasillos y reparar las consolas dañadas para restaurar los sistemas de navegación. Robots enemigos patrullan el mapa y persiguen al jugador; si la vida llega a cero, la misión fracasa.
 
----
-
-## Objetivo del jugador
-
-El jugador debe:
-
-* Explorar la nave.
-* Recolectar fusibles.
-* Reparar las consolas dañadas.
-* Evitar a los robots enemigos.
-* Mantener su vida por encima de cero.
-* Completar la reparación total de la nave para ganar.
+**Objetivo:** reparar las 3 consolas principales y luego las 4 consolas globales antes de quedarse sin vida.
 
 ---
 
-## Mecánicas principales
+## Instalación y ejecución con Vite
 
-* Movimiento libre en vista superior.
-* Colisiones con paredes y objetos del mapa.
-* Enemigos con comportamiento de persecución.
-* Sistema de vida del jugador.
-* Recolección de fusibles.
-* Reparación de consolas.
-* Pantalla de victoria.
-* Pantalla de derrota.
-* Menú principal.
-* Sistema de pausa.
-* Reinicio del juego.
+### Requisitos previos
+
+- [Node.js](https://nodejs.org/) v18 o superior
+- npm (incluido con Node.js)
+
+### Pasos
+
+```bash
+# 1. Clonar el repositorio
+git clone https://github.com/jorgelys2310-alt/Proyecto_AW_B1.git
+
+# 2. Entrar a la carpeta del proyecto
+cd Proyecto_AW_B1
+
+# 3. Instalar dependencias
+npm install
+
+# 4. Iniciar el servidor de desarrollo
+npm run dev
+```
+
+Vite mostrará una URL similar a `http://localhost:5173` — ábrela en el navegador para jugar.
+
+```bash
+# Generar build de producción
+npm run build
+
+# Previsualizar el build
+npm run preview
+```
 
 ---
 
 ## Controles
 
-### Teclado
+### Teclado (escritorio)
 
-| Tecla          | Acción                      |
-| -------------- | --------------------------- |
-| Flechas / WASD | Mover al jugador            |
-| E              | Reparar consola             |
-| F              | Usar botiquín               |
-| ESC            | Pausar o reanudar el juego  |
-| R              | Reiniciar partida           |
-| Enter          | Iniciar juego desde el menú |
+| Tecla            | Acción                       |
+| ---------------- | ---------------------------- |
+| `W A S D`        | Mover al jugador             |
+| Flechas `↑↓←→`  | Mover al jugador             |
+| `E`              | Reparar consola cercana      |
+| `F`              | Usar botiquín cercano        |
+| `M`              | Silenciar / activar audio    |
+| `ESC`            | Pausar o reanudar el juego   |
+| `R`              | Reiniciar partida            |
+| `Enter`          | Iniciar juego desde el menú  |
 
----
+### Táctiles (móvil / tablet)
 
-## Tecnologías utilizadas
+| Botón virtual | Acción                  |
+| ------------- | ----------------------- |
+| `◀ ▶ ▲ ▼`   | Mover al jugador        |
+| `E`           | Reparar consola cercana |
+| `F`           | Usar botiquín cercano   |
 
-* Phaser.js
-* JavaScript
-* Vite
-* HTML5
-* CSS3
-
----
-
-## Instalación y ejecución
-
-Para ejecutar el proyecto localmente, se deben seguir los siguientes pasos:
-
-### 1. Clonar o descargar el proyecto
-
-```bash
-git clone https://github.com/jorgelys2310-alt/Proyecto_AW_B1.git
-```
-
-O descargar el archivo ZIP y descomprimirlo.
-
-### 2. Entrar a la carpeta del proyecto
-
-```bash
-cd ProyectoB1
-```
-
-### 3. Instalar dependencias
-
-```bash
-npm install
-```
-
-### 4. Ejecutar el proyecto
-
-```bash
-npm run dev
-```
-
-### 5. Abrir en el navegador
-
-Después de ejecutar el comando anterior, Vite mostrará una dirección similar a:
-
-```bash
-http://localhost:5173
-```
-
-Abrir esa dirección en el navegador para jugar.
+Los botones aparecen automáticamente cuando se detecta un dispositivo táctil y se reposicionan al rotar la pantalla.
 
 ---
 
-## Estructura del proyecto
+## Estructura de carpetas
 
-```txt
-ProyectoB1/
+```
+Proyecto_AW_B1/
 │
 ├── public/
 │   └── assets/
-│       ├── enemies/
-│       ├── items/
-│       ├── map/
-│       ├── player/
-│       └── ui/
+│       ├── audio/          # Música y efectos de sonido (.mp3, .wav)
+│       ├── enemies/        # Spritesheet del robot enemigo
+│       ├── items/          # Imagen del fusible
+│       ├── map/            # Mapa Tiled (.json, .tmx) y tileset
+│       ├── player/         # Spritesheet del jugador
+│       └── ui/             # Fondo del menú
 │
 ├── src/
+│   ├── managers/
+│   │   └── ResponsiveManager.js   # Detecta touch, botones virtuales, getInput()
+│   │
 │   ├── objects/
-│   │   ├── Enemy.js
-│   │   └── Player.js
+│   │   ├── Enemy.js               # Clase enemigo: patrulla + persecución
+│   │   └── Player.js              # Clase jugador: movimiento 4 direcciones
 │   │
 │   ├── scenes/
-│   │   ├── GameScene.js
-│   │   └── MenuScene.js
+│   │   ├── GameScene.js           # Escena principal: lógica completa del juego
+│   │   └── MenuScene.js           # Menú principal con récord y controles
 │   │
-│   ├── audio/
-│   ├── managers/
-│   ├── physics/
-│   ├── ui/
-│   ├── main.js
-│   └── style.css
+│   ├── audio/                     # (reservado para módulos de audio futuros)
+│   ├── physics/                   # (reservado para helpers de físicas futuros)
+│   ├── ui/                        # (reservado para componentes de UI futuros)
+│   │
+│   ├── main.js                    # Configuración de Phaser y arranque del juego
+│   └── style.css                  # Estilos globales y contenedor del canvas
 │
 ├── index.html
 ├── package.json
-├── package-lock.json
 └── README.md
 ```
 
 ---
 
-## Descripción de archivos principales
+## Funcionalidades implementadas
 
-### `src/main.js`
+### Mecánicas de juego
+- Movimiento en 4 direcciones con velocidad diagonal normalizada
+- Sistema de colisiones con paredes y puertas mediante capa de colisión Tiled
+- Enemigos con IA: patrulla horizontal y persecución al detectar al jugador en rango
+- Invulnerabilidad temporal tras recibir daño (parpadeo + knockback)
+- Recolección de fusibles con límite de inventario (máx. 2)
+- Reparación de consolas por fases (3 fusibles por consola)
+- Sistema de oleadas: los fusibles se regeneran al completar cada consola
+- Desbloqueo progresivo de puertas y zonas de fusibles al reparar consolas
+- Condición de victoria: 3 consolas normales + 4 consolas globales reparadas
+- Condición de derrota: vida del jugador llega a 0
+- Botiquines con usos limitados (2 usos por botiquín)
 
-Archivo principal del proyecto.
-Configura Phaser, define el tamaño del juego, el tipo de físicas, el escalado de pantalla y registra las escenas principales.
+### HUD y UI
+- Contador de fusibles en inventario
+- Indicador de vida con corazones (❤️)
+- Puntaje en tiempo real
+- Récord de sesión (mejor puntaje)
+- Mensaje contextual de interacción (mostrar/ocultar según proximidad)
+- Pantalla de Game Over con instrucción de reinicio
+- Pantalla de Victoria con mensaje narrativo
+- Menú de Pausa (ESC)
+- Doble cámara: cámara del mundo (sigue al jugador, zoom 1.7×) + cámara del HUD (fija)
 
-### `src/scenes/MenuScene.js`
+### Audio
+- Música de fondo en bucle con volumen ajustado
+- Efectos de sonido: recoger fusible, reparar, abrir puerta, daño, game over, victoria
+- Toggle de mute con tecla `M`, estado persistido en `localStorage`
 
-Escena del menú principal.
-Muestra el título del juego, una imagen de fondo, instrucciones iniciales y permite iniciar la partida.
+### Persistencia
+- Récord (high score) guardado en `localStorage` — persiste entre sesiones
+- Estado de mute guardado en `localStorage`
+- El menú muestra el récord de la sesión anterior con animación pulsante
 
-### `src/scenes/GameScene.js`
-
-Escena principal del juego.
-Contiene la lógica del mapa, jugador, enemigos, colisiones, HUD, pausa, victoria, derrota y reinicio.
-
-### `src/objects/Player.js`
-
-Clase encargada del jugador.
-Controla el movimiento, velocidad, animación y comportamiento básico del personaje.
-
-### `src/objects/Enemy.js`
-
-Clase encargada de los robots enemigos.
-Define su movimiento y comportamiento de persecución hacia el jugador.
-
----
-
-## Assets utilizados
-
-El proyecto utiliza recursos visuales para:
-
-* Personaje principal.
-* Robots enemigos.
-* Mapa de la nave.
-* Tileset de ciencia ficción.
-* Fusibles.
-* Fondo del menú.
-
-Los assets fueron organizados dentro de la carpeta `public/assets`.
-
----
-
-## Condición de victoria
-
-El jugador gana cuando logra reparar todas las consolas necesarias de la nave.
-Al cumplirse esta condición, se muestra una pantalla de victoria indicando que la misión fue completada.
+### Responsive y controles táctiles
+- `Phaser.Scale.RESIZE`: el canvas se adapta al tamaño del viewport
+- `ResponsiveManager`: detecta dispositivos táctiles y muestra D-pad + botones de acción
+- Los botones virtuales se reposicionan automáticamente al girar la pantalla o cambiar el tamaño de ventana
+- `getInput()` unifica teclado y touch en un único objeto de entrada
+- `justPressed()` reproduce el comportamiento de `JustDown` para acciones puntuales táctiles
+- El HUD y los paneles se recentran dinámicamente al hacer resize
 
 ---
 
-## Condición de derrota
+## Tecnologías usadas
 
-El jugador pierde cuando su vida llega a cero debido al daño recibido por los robots enemigos.
-Cuando esto ocurre, se muestra una pantalla de Game Over y se permite reiniciar la partida.
+| Tecnología    | Versión   | Rol                                            |
+| ------------- | --------- | ---------------------------------------------- |
+| Phaser.js     | ^4.1.0    | Motor de juego: render, física arcade, cámaras |
+| JavaScript    | ES2022+   | Lógica del juego, clases, módulos              |
+| Vite          | ^8.0.12   | Bundler y servidor de desarrollo               |
+| HTML5         | —         | Canvas y estructura del documento              |
+| CSS3          | —         | Estilos del contenedor y responsive base       |
+| Tiled         | —         | Editor del mapa (.tmx exportado a .json)       |
+
+---
+
+## Créditos de assets
+
+| Asset                         | Fuente              | Licencia    |
+| ----------------------------- | ------------------- | ----------- |
+| Tileset SciFi (64×64)         | Kenney.nl           | CC0 1.0     |
+| Spritesheet jugador           | OpenGameArt.org     | CC0 / libre |
+| Spritesheet robot enemigo     | OpenGameArt.org     | CC0 / libre |
+| Efectos de sonido             | Pixabay             | Libre       |
+| Música de fondo               | Pixabay             | Libre       |
+| Imagen fondo menú             | Recurso libre       | Libre       |
+
+> Todos los assets son de uso libre para proyectos académicos y no comerciales.
+
+---
+
+## Autoevaluación — Rúbrica del proyecto
+
+| Criterio de evaluación                           | Puntaje máx. | Autoevaluación | Evidencia / Justificación                                                              |
+| ------------------------------------------------ | :----------: | :------------: | -------------------------------------------------------------------------------------- |
+| Mecánicas de juego implementadas y funcionales   | —            | —              | Movimiento, enemigos, consolas, puertas, fusibles, botiquines, victoria y derrota      |
+| Sistema de HUD completo                          | —            | —              | Vida, puntaje, récord, contador de fusibles, mensajes contextuales                     |
+| Sistema de audio                                 | —            | —              | Música en bucle, 6 efectos SFX, toggle mute persistido                                 |
+| Persistencia de datos (localStorage)             | —            | —              | Récord y estado de mute guardados entre sesiones                                       |
+| Responsive design y controles táctiles           | —            | —              | `RESIZE` mode + `ResponsiveManager` con D-pad y botones de acción táctiles            |
+| Calidad del código y arquitectura                | —            | —              | Clases separadas (Player, Enemy), managers, escenas, sin lógica duplicada              |
+| README completo y documentación                  | —            | —              | Descripción, instalación, controles, estructura, funcionalidades, créditos, rúbrica    |
+| **Total**                                        | —            | —              |                                                                                        |
 
 ---
 
 ## Autor
 
-Proyecto desarrollado por:
-
-**Jorge Yánez** 
+**Jorge Yánez**
 
 Asignatura: **Aplicaciones Web**
-Proyecto Final de Primer Bimestre
+Proyecto Final — Primer Bimestre
 Escuela Politécnica Nacional
-
----
-
-## Créditos
-
-* Motor de juego: Phaser.js
-* Entorno de desarrollo: Vite
-* Editor recomendado: Visual Studio Code
-* Assets gratuitos: Kenney Assets y recursos libres utilizados con fines académicos

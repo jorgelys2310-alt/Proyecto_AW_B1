@@ -16,7 +16,7 @@ const config = {
     },
     scene: [MenuScene, GameScene],
     scale: {
-        mode: Phaser.Scale.FIT,
+        mode: Phaser.Scale.EXPAND,
         autoCenter: Phaser.Scale.CENTER_BOTH
     }
 };

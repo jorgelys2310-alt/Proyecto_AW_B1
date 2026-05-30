@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import Player from "../objects/Player.js";
 import Enemy from "../objects/Enemy.js";
+import ResponsiveManager from "../managers/ResponsiveManager.js";
 
 export default class GameScene extends Phaser.Scene {
     constructor() {
@@ -8,6 +9,40 @@ export default class GameScene extends Phaser.Scene {
     }
 
     preload() {
+        const cx = this.scale.width  / 2;
+        const cy = this.scale.height / 2;
+        const W  = Math.min(this.scale.width * 0.6, 380);
+
+        const loadBg = this.add.rectangle(cx, cy, this.scale.width, this.scale.height, 0x1d2b1f);
+
+        const loadLabel = this.add.text(cx, cy - 60, "Cargando nave...", {
+            fontSize: "20px", fill: "#00ffff", fontFamily: "monospace"
+        }).setOrigin(0.5);
+
+        const box = this.add.graphics();
+        box.fillStyle(0x111111, 0.9);
+        box.fillRect(cx - W / 2 - 4, cy - 28, W + 8, 56);
+
+        const bar = this.add.graphics();
+        const pct = this.add.text(cx, cy, "0%", {
+            fontSize: "16px", fill: "#ffffff", fontFamily: "monospace"
+        }).setOrigin(0.5);
+
+        this.load.on("progress", (v) => {
+            bar.clear();
+            bar.fillStyle(0x00ffff, 1);
+            bar.fillRect(cx - W / 2, cy - 24, W * v, 48);
+            pct.setText(Math.floor(v * 100) + "%");
+        });
+
+        this.load.on("complete", () => {
+            loadBg.destroy();
+            box.destroy();
+            bar.destroy();
+            pct.destroy();
+            loadLabel.destroy();
+        });
+
         this.load.tilemapTiledJSON("nave", "/assets/map/nave.json");
         this.load.image("scifi_tiles", "/assets/map/tilesets/ScifiTilemap_64x64_v3.png");
 
@@ -23,13 +58,14 @@ export default class GameScene extends Phaser.Scene {
 
         this.load.image("fusible", "/assets/items/fusible.png");
 
-        this.load.audio("music", "/assets/audio/music.mp3");
-        this.load.audio("pickup", "/assets/audio/pickup.wav");
-        this.load.audio("hit", "/assets/audio/hit.wav");
-        this.load.audio("repair", "/assets/audio/repair.wav");
+        // El toque en MenuScene desbloquea el AudioContext de Safari antes de llegar aquí
+        this.load.audio("music",     "/assets/audio/music.mp3");
         this.load.audio("door_open", "/assets/audio/door_open.wav");
-        this.load.audio("gameover", "/assets/audio/gameover.wav");
-        this.load.audio("victory", "/assets/audio/victory.wav");
+        this.load.audio("gameover",  "/assets/audio/gameover.wav");
+        this.load.audio("pickup",    "/assets/audio/pickup.wav");
+        this.load.audio("hit",       "/assets/audio/hit.wav");
+        this.load.audio("repair",    "/assets/audio/repair.wav");
+        this.load.audio("victory",   "/assets/audio/victory.wav");
     }
 
     create() {
@@ -144,15 +180,19 @@ export default class GameScene extends Phaser.Scene {
 
         this.isMuted = localStorage.getItem("muted") === "true";
 
-        this.music = this.sound.add("music", {
-            loop: true,
-            volume: 0.35
-        });
+        this.music = this.cache.audio.has("music")
+            ? this.sound.add("music", { loop: true, volume: 0.35 })
+            : null;
 
-        this.gameOverSound = this.sound.add("gameover");
-        this.victorySound = this.sound.add("victory");
+        this.gameOverSound = this.cache.audio.has("gameover")
+            ? this.sound.add("gameover")
+            : null;
 
-        if (!this.music.isPlaying) {
+        this.victorySound = this.cache.audio.has("victory")
+            ? this.sound.add("victory")
+            : null;
+
+        if (this.music && !this.music.isPlaying) {
             this.music.play();
         }
         this.sound.mute = this.isMuted;
@@ -160,6 +200,23 @@ export default class GameScene extends Phaser.Scene {
         this.keyM = this.input.keyboard.addKey(
             Phaser.Input.Keyboard.KeyCodes.M
         );
+
+        this.responsive = new ResponsiveManager(this);
+
+        // Reposicionar joystick/botones cuando el layout ya está listo
+        this.time.delayedCall(100, () => this.responsive._reposition());
+
+        this.scale.on("resize", (gameSize) => {
+            if (this.hudCamera) {
+                this.hudCamera.setSize(gameSize.width, gameSize.height);
+            }
+            const cx = gameSize.width / 2;
+            const cy = gameSize.height / 2;
+            this.gameOverPanel.setPosition(cx, cy);
+            this.victoryPanel.setPosition(cx, cy);
+            this.pausePanel.setPosition(cx, cy);
+            this.interactText.setPosition(cx, gameSize.height - 40);
+        });
     }
 
     createPlayerAnimations() {
@@ -250,8 +307,10 @@ export default class GameScene extends Phaser.Scene {
             fontFamily: "monospace",
             align: "center"
         }).setOrigin(0.5);
-        const restart = this.add.text(0, 80, "PRESIONA R PARA REINICIAR", {
-            fontSize: "22px",
+        const isMobile = ("ontouchstart" in window) || navigator.maxTouchPoints > 0;
+        const restart = this.add.text(0, 80,
+            isMobile ? "TOCA LA PANTALLA PARA REINICIAR" : "PRESIONA R PARA REINICIAR", {
+            fontSize: "20px",
             fill: "#ff3333",
             fontFamily: "monospace"
         }).setOrigin(0.5);
@@ -277,8 +336,9 @@ export default class GameScene extends Phaser.Scene {
                 align: "center"
             }
         ).setOrigin(0.5);
-        const victoryRestart = this.add.text(0, 95, "PRESIONA R PARA JUGAR DE NUEVO", {
-            fontSize: "22px",
+        const victoryRestart = this.add.text(0, 95,
+            isMobile ? "TOCA LA PANTALLA PARA JUGAR DE NUEVO" : "PRESIONA R PARA JUGAR DE NUEVO", {
+            fontSize: "20px",
             fill: "#00ffff",
             fontFamily: "monospace"
         }).setOrigin(0.5);
@@ -293,7 +353,8 @@ export default class GameScene extends Phaser.Scene {
             fontFamily: "monospace",
             fontStyle: "bold"
         }).setOrigin(0.5);
-        const pauseMsg = this.add.text(0, 25, "ESC - Continuar\nR - Reiniciar", {
+        const pauseMsg = this.add.text(0, 25,
+            isMobile ? "TOCA PARA CONTINUAR\nR - Reiniciar" : "ESC - Continuar\nR - Reiniciar", {
             fontSize: "22px",
             fill: "#ffffff",
             fontFamily: "monospace",
@@ -451,7 +512,7 @@ export default class GameScene extends Phaser.Scene {
                     }
 
                     fusible.destroy();
-                    this.sound.play("pickup", { volume: 0.6 });
+                    this.playSound("pickup", { volume: 0.6 });
                     this.fusiblesRecolectados++;
 
                     this.fusibleText.setText(
@@ -510,7 +571,7 @@ export default class GameScene extends Phaser.Scene {
 
         this.fusiblesRecolectados--;
         consoleObj.progress++;
-        this.sound.play("repair", { volume: 0.7 });
+        this.playSound("repair", { volume: 0.7 });
 
         this.fusibleText.setText(
             `Fusibles: ${this.fusiblesRecolectados}/${this.maxFusibles}`
@@ -529,7 +590,7 @@ export default class GameScene extends Phaser.Scene {
                     door.destroy();
                     this.updateScore(50);
                     console.log(`Puerta_${consoleObj.consoleId} abierta`);
-                    this.sound.play("door_open", { volume: 0.7 });
+                    this.playSound("door_open", { volume: 0.7 });
                 }
 
                 const nuevaZona = `Fusible${consoleObj.consoleId}`;
@@ -559,7 +620,7 @@ export default class GameScene extends Phaser.Scene {
         this.playerInvulnerable = true;
         this.playerHealth--;
 
-        this.sound.play("hit", { volume: 0.7 });
+        this.playSound("hit", { volume: 0.7 });
 
         this.updateHearts();
         this.updateScore(-25);
@@ -619,29 +680,41 @@ export default class GameScene extends Phaser.Scene {
         }
     }
 
+    _restartGame() {
+        this.gameOverSound?.stop();
+        this.victorySound?.stop();
+        this.music?.stop();
+        this.physics.world.resume();
+        this.scene.restart();
+    }
+
+    playSound(key, config = {}) {
+        if (this.cache.audio.has(key)) {
+            this.sound.play(key, config);
+        }
+    }
+
     showGameOver() {
         this.isGameOver = true;
         this.saveHighScore();
-        if (this.music?.isPlaying) {
-            this.music.stop();
-        }
-        this.gameOverSound.play();
+        if (this.music?.isPlaying) this.music.stop();
+        this.gameOverSound?.play();
         this.physics.world.pause();
         this.player.body.setVelocity(0);
         this.gameOverPanel.setVisible(true);
+        this.input.once("pointerdown", () => this._restartGame());
     }
 
     showVictory() {
         this.gameWon = true;
         this.updateScore(500);
         this.saveHighScore();
-        if (this.music?.isPlaying) {
-            this.music.stop();
-        }
-        this.victorySound.play();
+        if (this.music?.isPlaying) this.music.stop();
+        this.victorySound?.play();
         this.physics.world.pause();
         this.player.body.setVelocity(0);
         this.victoryPanel.setVisible(true);
+        this.input.once("pointerdown", () => this._restartGame());
     }
 
     update() {
@@ -656,12 +729,14 @@ export default class GameScene extends Phaser.Scene {
 
             if (this.isPaused) {
                 this.player.body.setVelocity(0);
-
-                this.enemiesGroup.getChildren().forEach(enemy => {
-                    enemy.body.setVelocity(0);
-                });
-
+                this.enemiesGroup.getChildren().forEach(e => e.body.setVelocity(0));
                 this.physics.world.pause();
+                // Toque para reanudar en móvil
+                this.input.once("pointerdown", () => {
+                    this.isPaused = false;
+                    this.pausePanel.setVisible(false);
+                    this.physics.world.resume();
+                });
             } else {
                 this.physics.world.resume();
             }
@@ -669,39 +744,20 @@ export default class GameScene extends Phaser.Scene {
 
         if (this.isPaused) {
             if (Phaser.Input.Keyboard.JustDown(this.keyR)) {
-                if (this.gameOverSound?.isPlaying) {
-                    this.gameOverSound.stop();
-                }
-                if (this.victorySound?.isPlaying) {
-                    this.victorySound.stop();
-                }
-                if (this.music?.isPlaying) {
-                    this.music.stop();
-                }
-                this.physics.world.resume();
-                this.scene.restart();
+                this._restartGame();
             }
             return;
         }
 
         if (this.gameWon || this.isGameOver) {
             if (Phaser.Input.Keyboard.JustDown(this.keyR)) {
-                if (this.gameOverSound?.isPlaying) {
-                    this.gameOverSound.stop();
-                }
-                if (this.victorySound?.isPlaying) {
-                    this.victorySound.stop();
-                }
-                if (this.music?.isPlaying) {
-                    this.music.stop();
-                }
-                this.physics.world.resume();
-                this.scene.restart();
+                this._restartGame();
             }
             return;
         }
 
-        this.player.move(this.cursors, this.keys);
+        const input = this.responsive.getInput(this.cursors, this.keys);
+        this.player.move(input, input);
 
         this.enemiesGroup.getChildren().forEach(enemy => {
             enemy.update(this.player);
@@ -741,14 +797,14 @@ export default class GameScene extends Phaser.Scene {
         }
 
         if (
-            Phaser.Input.Keyboard.JustDown(this.keyE) &&
+            (Phaser.Input.Keyboard.JustDown(this.keyE) || this.responsive.justPressed("action")) &&
             this.currentConsole
         ) {
             this.repairConsole(this.currentConsole);
         }
 
         if (
-            Phaser.Input.Keyboard.JustDown(this.keyF) &&
+            (Phaser.Input.Keyboard.JustDown(this.keyF) || this.responsive.justPressed("medkit")) &&
             this.currentMedkit
         ) {
             this.useMedkit(this.currentMedkit);
