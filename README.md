@@ -222,10 +222,3 @@ Escuela Politécnica Nacional
 * Entorno de desarrollo: Vite
 * Editor recomendado: Visual Studio Code
 * Assets gratuitos: Kenney Assets y recursos libres utilizados con fines académicos
-
----
-
-## Estado del proyecto
-
-El proyecto se encuentra en una versión funcional inicial.
-Permite jugar una partida completa desde el menú hasta la victoria o derrota, aunque todavía puede mejorar con audio, persistencia, puntaje y controles móviles.

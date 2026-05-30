@@ -22,6 +22,14 @@ export default class GameScene extends Phaser.Scene {
         });
 
         this.load.image("fusible", "/assets/items/fusible.png");
+
+        this.load.audio("music", "/assets/audio/music.mp3");
+        this.load.audio("pickup", "/assets/audio/pickup.wav");
+        this.load.audio("hit", "/assets/audio/hit.wav");
+        this.load.audio("repair", "/assets/audio/repair.wav");
+        this.load.audio("door_open", "/assets/audio/door_open.wav");
+        this.load.audio("gameover", "/assets/audio/gameover.wav");
+        this.load.audio("victory", "/assets/audio/victory.wav");
     }
 
     create() {
@@ -49,7 +57,9 @@ export default class GameScene extends Phaser.Scene {
         this.isGameOver = false;
         this.isPaused = false;
 
+
         this.unlockedFusibleZones = ["Fusible"];
+
 
         const map = this.make.tilemap({ key: "nave" });
         const tileset = map.addTilesetImage("scifi_tiles", "scifi_tiles");
@@ -131,6 +141,25 @@ export default class GameScene extends Phaser.Scene {
         this.keyF = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.F);
         this.keyR = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
         this.keyESC = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
+
+        this.isMuted = localStorage.getItem("muted") === "true";
+
+        this.music = this.sound.add("music", {
+            loop: true,
+            volume: 0.35
+        });
+
+        this.gameOverSound = this.sound.add("gameover");
+        this.victorySound = this.sound.add("victory");
+
+        if (!this.music.isPlaying) {
+            this.music.play();
+        }
+        this.sound.mute = this.isMuted;
+
+        this.keyM = this.input.keyboard.addKey(
+            Phaser.Input.Keyboard.KeyCodes.M
+        );
     }
 
     createPlayerAnimations() {
@@ -422,6 +451,7 @@ export default class GameScene extends Phaser.Scene {
                     }
 
                     fusible.destroy();
+                    this.sound.play("pickup", { volume: 0.6 });
                     this.fusiblesRecolectados++;
 
                     this.fusibleText.setText(
@@ -480,6 +510,7 @@ export default class GameScene extends Phaser.Scene {
 
         this.fusiblesRecolectados--;
         consoleObj.progress++;
+        this.sound.play("repair", { volume: 0.7 });
 
         this.fusibleText.setText(
             `Fusibles: ${this.fusiblesRecolectados}/${this.maxFusibles}`
@@ -498,6 +529,7 @@ export default class GameScene extends Phaser.Scene {
                     door.destroy();
                     this.updateScore(50);
                     console.log(`Puerta_${consoleObj.consoleId} abierta`);
+                    this.sound.play("door_open", { volume: 0.7 });
                 }
 
                 const nuevaZona = `Fusible${consoleObj.consoleId}`;
@@ -526,6 +558,8 @@ export default class GameScene extends Phaser.Scene {
 
         this.playerInvulnerable = true;
         this.playerHealth--;
+
+        this.sound.play("hit", { volume: 0.7 });
 
         this.updateHearts();
         this.updateScore(-25);
@@ -588,6 +622,10 @@ export default class GameScene extends Phaser.Scene {
     showGameOver() {
         this.isGameOver = true;
         this.saveHighScore();
+        if (this.music?.isPlaying) {
+            this.music.stop();
+        }
+        this.gameOverSound.play();
         this.physics.world.pause();
         this.player.body.setVelocity(0);
         this.gameOverPanel.setVisible(true);
@@ -597,12 +635,21 @@ export default class GameScene extends Phaser.Scene {
         this.gameWon = true;
         this.updateScore(500);
         this.saveHighScore();
+        if (this.music?.isPlaying) {
+            this.music.stop();
+        }
+        this.victorySound.play();
         this.physics.world.pause();
         this.player.body.setVelocity(0);
         this.victoryPanel.setVisible(true);
     }
 
     update() {
+        if (Phaser.Input.Keyboard.JustDown(this.keyM)) {
+            this.sound.mute = !this.sound.mute;
+            localStorage.setItem("muted", this.sound.mute);
+        }
+
         if (Phaser.Input.Keyboard.JustDown(this.keyESC) && !this.isGameOver && !this.gameWon) {
             this.isPaused = !this.isPaused;
             this.pausePanel.setVisible(this.isPaused);
@@ -622,6 +669,15 @@ export default class GameScene extends Phaser.Scene {
 
         if (this.isPaused) {
             if (Phaser.Input.Keyboard.JustDown(this.keyR)) {
+                if (this.gameOverSound?.isPlaying) {
+                    this.gameOverSound.stop();
+                }
+                if (this.victorySound?.isPlaying) {
+                    this.victorySound.stop();
+                }
+                if (this.music?.isPlaying) {
+                    this.music.stop();
+                }
                 this.physics.world.resume();
                 this.scene.restart();
             }
@@ -630,6 +686,15 @@ export default class GameScene extends Phaser.Scene {
 
         if (this.gameWon || this.isGameOver) {
             if (Phaser.Input.Keyboard.JustDown(this.keyR)) {
+                if (this.gameOverSound?.isPlaying) {
+                    this.gameOverSound.stop();
+                }
+                if (this.victorySound?.isPlaying) {
+                    this.victorySound.stop();
+                }
+                if (this.music?.isPlaying) {
+                    this.music.stop();
+                }
                 this.physics.world.resume();
                 this.scene.restart();
             }
