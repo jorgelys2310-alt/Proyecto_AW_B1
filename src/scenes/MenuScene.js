@@ -13,8 +13,9 @@ export default class MenuScene extends Phaser.Scene {
     }
 
     create() {
-        this.add.image(480, 270, "menu_bg")
-            .setDisplaySize(960, 540);
+        const highScore = localStorage.getItem("highScore") || 0;
+
+        this.add.image(480, 270, "menu_bg").setDisplaySize(960, 540);
 
         this.add.rectangle(480, 270, 960, 540, 0x000000, 0.55);
 
@@ -30,6 +31,26 @@ export default class MenuScene extends Phaser.Scene {
             fill: "#ffffff",
             fontFamily: "monospace"
         }).setOrigin(0.5);
+
+        const scoreText = this.add.text(
+            480,
+            250,
+            `🏆 Récord: ${highScore}`,
+            {
+                fontSize: "22px",
+                fill: "#FFD700",
+                fontFamily: "monospace",
+                fontStyle: "bold"
+            }
+        ).setOrigin(0.5);
+
+        this.tweens.add({
+            targets: scoreText,
+            scale: 1.05,
+            duration: 800,
+            yoyo: true,
+            repeat: -1
+        });
 
         const startText = this.add.text(480, 310, "▶ PRESIONA ENTER PARA INICIAR", {
             fontSize: "24px",
