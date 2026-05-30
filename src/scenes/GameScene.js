@@ -3,12 +3,51 @@ import Player from "../objects/Player.js";
 import Enemy from "../objects/Enemy.js";
 import ResponsiveManager from "../managers/ResponsiveManager.js";
 
+/**
+ * Escena principal del videojuego.
+ *
+ * Esta escena contiene toda la lógica jugable del proyecto:
+ * carga del mapa, creación del jugador, enemigos, fusibles,
+ * consolas, puertas, botiquines, HUD, sonidos, pausa, victoria
+ * y derrota.
+ *
+ * Funcionalidades principales:
+ * - Cargar assets del mapa, personajes, objetos y sonidos.
+ * - Crear el mapa usando Tilemap de Phaser.
+ * - Instanciar al jugador y enemigos.
+ * - Gestionar recolección de fusibles.
+ * - Reparar consolas para abrir puertas y avanzar.
+ * - Controlar la vida del jugador y el daño recibido.
+ * - Mostrar puntaje, récord, vida y mensajes de interacción.
+ * - Guardar récord y progreso usando localStorage.
+ * - Manejar victoria, game over y reinicio de la partida.
+ */
+
 export default class GameScene extends Phaser.Scene {
+    /**
+     * Constructor de la escena principal.
+     * Registra esta escena con el nombre "GameScene",
+     * permitiendo que Phaser pueda iniciarla desde el menú.
+     */
     constructor() {
         super("GameScene");
     }
 
+
+    /**
+     * Carga todos los recursos necesarios para la escena principal.
+     *
+     * Aquí se cargan:
+     * - El mapa de la nave en formato JSON.
+     * - El tileset usado para construir el escenario.
+     * - Spritesheets del jugador y enemigos.
+     * - Imagen de los fusibles.
+     * - Audios de música, daño, reparación, victoria y derrota.
+     *
+     * También se muestra una pantalla de carga con barra de progreso.
+     */
     preload() {
+        //Clacula centro de pantalla
         const cx = this.scale.width  / 2;
         const cy = this.scale.height / 2;
         const W  = Math.min(this.scale.width * 0.6, 380);
@@ -28,6 +67,7 @@ export default class GameScene extends Phaser.Scene {
             fontSize: "16px", fill: "#ffffff", fontFamily: "monospace"
         }).setOrigin(0.5);
 
+        //Actualiza la bara de carga 
         this.load.on("progress", (v) => {
             bar.clear();
             bar.fillStyle(0x00ffff, 1);
@@ -35,6 +75,7 @@ export default class GameScene extends Phaser.Scene {
             pct.setText(Math.floor(v * 100) + "%");
         });
 
+        //ELimina los ekementos de carga cuando los assets esten listos
         this.load.on("complete", () => {
             loadBg.destroy();
             box.destroy();
@@ -69,29 +110,45 @@ export default class GameScene extends Phaser.Scene {
     }
 
     create() {
+        /**
+         * Inicializa todos los elementos de la partida.
+         *
+         * En este método se configuran las variables principales del juego,
+         * se crea el mapa, se agregan capas de colisión, se instancia el jugador,
+         * se generan enemigos, consolas, puertas, fusibles, botiquines, sonidos,
+         * controles y elementos del HUD.
+         */
+
+        //Puntaje
         this.score = 0;
         this.highScore = Number(localStorage.getItem("highScore")) || 0;
 
+        //Progreso y nivel guardados el localStorage
         this.progresoMaximo = Number(localStorage.getItem("progresoMaximo")) || 0;
         this.nivelAlcanzado = Number(localStorage.getItem("nivelAlcanzado")) || 1;
 
+        //Fusibles
         this.fusiblesRecolectados = 0;
         this.maxFusibles = 2;
         this.fusiblesPorOleada = 3;
 
+        //Vida jugador
         this.playerHealth = 3;
         this.maxHealth = 3;
         this.playerInvulnerable = false;
         this.medkits = [];
 
+        //Objetos interactivos
         this.consoles = [];
         this.doors = {};
         this.currentConsole = null;
         this.currentMedkit = null;
 
+        //Reparacion consila
         this.consolasNormalesCompletadas = 0;
         this.consolasGlobalesCompletadas = 0;
 
+        //Estados del juego
         this.gameWon = false;
         this.isGameOver = false;
         this.isPaused = false;
@@ -99,15 +156,15 @@ export default class GameScene extends Phaser.Scene {
 
         this.unlockedFusibleZones = ["Fusible"];
 
-
+        //Crear mapa desde el JSON generado con Tiled
         const map = this.make.tilemap({ key: "nave" });
         const tileset = map.addTilesetImage("scifi_tiles", "scifi_tiles");
 
+        //Capas visuales y de colision
         const floorLayer = map.createLayer("Floor", tileset, 0, 0);
         const wallsLayer = map.createLayer("Walls", tileset, 0, 0);
         const collisionLayer = map.createLayer("Colision", tileset, 0, 0);
         const objectsLayer = map.createLayer("Objects", tileset, 0, 0);
-
         collisionLayer.setCollisionByExclusion([-1]);
         collisionLayer.setVisible(false);
 
@@ -223,6 +280,10 @@ export default class GameScene extends Phaser.Scene {
     }
 
     createPlayerAnimations() {
+        /**
+         * Crea las animaciones del jugador.
+         * Estas animaciones permiten mostrar movimiento hacia distintas direcciones.
+         */
         this.anims.create({
             key: "idle-down",
             frames: [{ key: "player", frame: 0 }],
@@ -251,6 +312,10 @@ export default class GameScene extends Phaser.Scene {
     }
 
     createEnemyAnimations() {
+        /**
+         * Crea las animaciones de los enemigos.
+         * Permite que los robots tengan movimiento visual mientras persiguen al jugador.
+         */
         this.anims.create({
             key: "enemy-walk",
             frames: this.anims.generateFrameNumbers("enemy", {
@@ -263,6 +328,24 @@ export default class GameScene extends Phaser.Scene {
     }
 
     createHUD(floorLayer, wallsLayer, collisionLayer, objectsLayer) {
+        /**
+         * Crea la interfaz del jugador.
+         *
+         * El HUD muestra información importante como:
+         * - Vida del jugador.
+         * - Puntaje actual.
+         * - Récord guardado.
+         * - Fusibles recolectados.
+         * - Mensajes de interacción.
+         * - Panel de pausa.
+         * - Pantalla de game over.
+         * - Pantalla de victoria.
+         * param {Phaser.Tilemaps.TilemapLayer} floorLayer - Capa del suelo.
+         * param {Phaser.Tilemaps.TilemapLayer} wallsLayer - Capa de paredes.
+         * param {Phaser.Tilemaps.TilemapLayer} collisionLayer - Capa de colisiones.
+         * param {Phaser.Tilemaps.TilemapLayer} objectsLayer - Capa de objetos.
+         */
+
         this.fusibleText = this.add.text(10, 10, "Fusibles: 0/2", {
             fontSize: "16px",
             fill: "#ffffff",
@@ -397,6 +480,15 @@ export default class GameScene extends Phaser.Scene {
     }
 
     createConsole(obj) {
+        /**
+         * Crea una consola interactiva en el mapa.
+         *
+         * Cada consola puede requerir fusibles para ser reparada.
+         * Las consolas normales desbloquean puertas y nuevas zonas,
+         * mientras que las consolas globales forman parte del objetivo final.
+         *
+         *  param {object} obj - Objeto del mapa que representa la consola.
+         */
         const zone = this.add.zone(obj.x, obj.y, 90, 90);
         zone.setVisible(false);
 
@@ -421,6 +513,14 @@ export default class GameScene extends Phaser.Scene {
     }
 
     createDoor(obj) {
+        /**
+         * Crea una puerta bloqueada en el mapa.
+         *
+         * Las puertas se guardan en un objeto para poder destruirlas
+         * cuando la consola correspondiente sea reparada.
+         *
+         * param {object} obj - Objeto del mapa que representa la puerta.
+         */
         const doorId = obj.name.split("_")[1];
 
         const door = this.add.zone(obj.x, obj.y, 64, 64);
@@ -448,6 +548,14 @@ export default class GameScene extends Phaser.Scene {
     }
 
     getNearbyMedkit() {
+        /**
+         * Busca la consola más cercana al jugador.
+         *
+         * Se usa para saber si el jugador puede interactuar con una consola
+         * y mostrar el mensaje correspondiente en pantalla.
+         *
+         * returns {object|null} Consola cercana o null si no hay ninguna.
+         */
         let nearest = null;
         let nearestDistance = 70;
 
@@ -557,6 +665,17 @@ export default class GameScene extends Phaser.Scene {
     }
 
     repairConsole(consoleObj) {
+        /**
+         * Repara una consola usando fusibles recolectados.
+         *
+         * Si la consola es normal, al completarse abre una puerta
+         * y desbloquea nuevas zonas donde pueden aparecer fusibles.
+         *
+         * Si la consola es global, aumenta el progreso hacia la victoria.
+         * Cuando se reparan todas las consolas globales, se muestra la victoria.
+         *
+         * param {object} consoleObj - Consola que será reparada.
+         */
         if (consoleObj.repaired) return;
 
         if (
@@ -619,6 +738,16 @@ export default class GameScene extends Phaser.Scene {
     }
 
     damagePlayer(player, enemy) {
+        /**
+         * Aplica daño al jugador cuando entra en contacto con un enemigo.
+         *
+         * Reduce la vida, actualiza el HUD, resta puntaje y aplica un empuje
+         * para separar al jugador del enemigo. También activa invulnerabilidad
+         * temporal para evitar daño continuo.
+         *
+         * @param {Player} player - Instancia del jugador.
+         * @param {Enemy} enemy - Enemigo que causó el daño.
+         */
         if (this.isPaused) return;
         if (this.playerInvulnerable) return;
 
@@ -659,10 +788,21 @@ export default class GameScene extends Phaser.Scene {
     }
 
     updateHearts() {
+        /**
+         * Actualiza el texto de corazones del HUD según la vida actual del jugador.
+         */
         this.healthText.setText("❤️".repeat(this.playerHealth));
     }
 
     updateScore(points) {
+        /**
+         * Actualiza el puntaje del jugador.
+         *
+         * También verifica si el puntaje actual supera el récord guardado.
+         * Si lo supera, actualiza el récord en pantalla y lo guarda en localStorage.
+         *
+         * @param {number} points - Cantidad de puntos a sumar o restar.
+         */
         this.score += points;
 
         if (this.score < 0) {
@@ -679,6 +819,10 @@ export default class GameScene extends Phaser.Scene {
     }
 
     saveHighScore() {
+        /**
+         * Guarda el récord del jugador si el puntaje actual es mayor
+         * que el récord previamente almacenado.
+         */
         if (this.score > this.highScore) {
             this.highScore = this.score;
             localStorage.setItem("highScore", this.highScore);
@@ -686,6 +830,12 @@ export default class GameScene extends Phaser.Scene {
     }
 
     _restartGame() {
+        /**
+         * Reinicia la partida actual.
+         *
+         * Detiene sonidos activos, reanuda las físicas si estaban pausadas
+         * y reinicia completamente la escena.
+         */
         this.gameOverSound?.stop();
         this.victorySound?.stop();
         this.music?.stop();
@@ -694,12 +844,24 @@ export default class GameScene extends Phaser.Scene {
     }
 
     playSound(key, config = {}) {
+        /**
+         * Reproduce un sonido si existe en la caché de audio.
+         *
+         * @param {string} key - Clave del sonido cargado.
+         * @param {object} config - Configuración opcional del sonido.
+         */
         if (this.cache.audio.has(key)) {
             this.sound.play(key, config);
         }
     }
 
     showGameOver() {
+        /**
+         * Muestra la pantalla de Game Over.
+         *
+         * Detiene la música, reproduce el sonido de derrota,
+         * pausa las físicas, detiene al jugador y muestra el panel final.
+         */
         this.isGameOver = true;
         this.saveHighScore();
         if (this.music?.isPlaying) this.music.stop();
@@ -711,6 +873,12 @@ export default class GameScene extends Phaser.Scene {
     }
 
     showVictory() {
+        /**
+         * Muestra la pantalla de victoria.
+         *
+         * Guarda el progreso, suma puntos extra, detiene la música,
+         * reproduce el sonido de victoria, pausa el juego y muestra el panel final.
+         */
         this.gameWon = true;
         this.guardarProgreso();
         this.updateScore(500);
@@ -724,6 +892,17 @@ export default class GameScene extends Phaser.Scene {
     }
 
     guardarProgreso() {
+        /**
+         * Guarda el progreso máximo alcanzado por el jugador.
+         *
+         * El progreso se calcula sumando las consolas normales y globales reparadas.
+         * También determina el nivel alcanzado:
+         * - Nivel 1: inicio del juego.
+         * - Nivel 2: consolas normales completadas.
+         * - Nivel 3: consolas globales completadas.
+         *
+         * Los datos se guardan en localStorage para mostrarse luego en el menú.
+         */
         const progresoActual =
             this.consolasNormalesCompletadas + this.consolasGlobalesCompletadas;
 
@@ -749,6 +928,20 @@ export default class GameScene extends Phaser.Scene {
     }
 
     update() {
+        /**
+         * Bucle principal de actualización de la escena.
+         *
+         * Se ejecuta constantemente mientras la escena está activa.
+         * Controla:
+         * - Silenciar o activar sonido.
+         * - Pausar y reanudar el juego.
+         * - Reiniciar partida.
+         * - Movimiento del jugador.
+         * - Actualización de enemigos.
+         * - Detección de consolas y botiquines cercanos.
+         * - Interacción para reparar consolas.
+         * - Uso de botiquines.
+         */
         if (Phaser.Input.Keyboard.JustDown(this.keyM)) {
             this.sound.mute = !this.sound.mute;
             localStorage.setItem("muted", this.sound.mute);

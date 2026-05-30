@@ -1,19 +1,68 @@
 import Phaser from "phaser";
 
+/**
+ * Escena del menú principal del juego.
+ * 
+ * Esta escena se encarga de mostrar la pantalla inicial del videojuego,
+ * incluyendo el fondo espacial animado, el título, la historia introductoria,
+ * las opciones del menú, el panel de récords y el manual del juego.
+ * 
+ * Funcionalidades principales:
+ * - Construye el fondo visual del menú con estrellas, nebulosas, planeta y partículas.
+ * - Muestra el título y la historia introductoria.
+ * - Permite navegar entre opciones usando teclado o interacción táctil.
+ * - Abre paneles informativos como récords y manual.
+ * - Inicia la escena principal del juego.
+ * - Muestra el récord y el nivel máximo alcanzado usando localStorage.
+ */
+
 export default class MenuScene extends Phaser.Scene {
+
+    /**
+     * Constructor de la escena.
+     * Registra esta escena con el nombre "MenuScene",
+     * el cual se usa para cambiar entre escenas dentro de Phaser.
+     */
     constructor() { super("MenuScene"); }
+
+    /**
+     * Método preload de Phaser.
+     * En esta escena no se cargan assets externos porque el menú
+     * se construye principalmente con gráficos, textos y animaciones.
+     */
     preload() {}
 
+    
     create() {
+        /**
+         * Método principal de creación de la escena.
+         * Se ejecuta cuando Phaser carga esta escena.
+         * 
+         * Aquí se inicializan variables internas, se detecta si el usuario
+         * está en dispositivo móvil y se construyen todos los elementos visuales
+         * del menú principal.
+         */
         const W = this.scale.width, H = this.scale.height;
+        //Ancho y alto de la escena
         this._W = W; this._H = H;
+
+        //Estado actual del menu: "menu", "record"
         this._state  = "menu";
+
+        //Indice de la opcion seleccionada
         this._selIdx = 0;
+
+        // Lista de opciones del menu
         this._items  = [];
+
+        //Grafico para resaltar la opcion seleccionada
         this._selGfx = null;
         this._panels = {};
+
+        //Detectar si el dispositivo tiene soporte tactil
         this._isMob  = ("ontouchstart" in window) || navigator.maxTouchPoints > 0;
 
+        //Construccion visula del menu
         this._buildBg(W, H);
         this._buildHexGrid(W, H);
         this._buildNebulae(W, H);
@@ -28,12 +77,17 @@ export default class MenuScene extends Phaser.Scene {
         this._buildPanelManual(W, H);
         this._setupInput();
 
+        // Animacion de entrada de controle de teclado
         this.cameras.main.fadeIn(700, 0, 0, 0);
     }
 
     // ── helpers ────────────────────────────────────────────────────────────
     _fs(H, frac, max) { return Math.min(Math.round(H * frac), max); }
 
+    /**
+     * Dibuja un marco rectangular con estilo futurista.
+     * Se usa para los paneles del menú, récords y manual.
+     */
     _frame(g, x, y, w, h, bCol = 0x00ccff, bgCol = 0x000b1a, bgA = 0.93, cSz = 14) {
         g.fillStyle(bgCol, bgA); g.fillRect(x, y, w, h);
         g.lineStyle(1.5, bCol, 0.9); g.strokeRect(x, y, w, h);
@@ -44,6 +98,10 @@ export default class MenuScene extends Phaser.Scene {
             });
     }
 
+    /**
+     * Dibuja una línea horizontal decorativa.
+     * Se usa para separar visualmente secciones dentro de los paneles.
+     */
     _hLine(g, x1, x2, y, col = 0x00ccff, a = 0.2) {
         g.lineStyle(1, col, a); g.beginPath(); g.moveTo(x1,y); g.lineTo(x2,y); g.strokePath();
     }
@@ -381,6 +439,10 @@ export default class MenuScene extends Phaser.Scene {
         this.tweens.add({ targets:rec, alpha:{from:.6,to:1}, duration:1800, yoyo:true, repeat:-1, ease:"Sine.easeInOut" });
     }
 
+    /**
+     * Redibuja visualmente la opción seleccionada del menú.
+     * Cambia colores, estilos, barras laterales y el borde de selección.
+     */
     _redrawSel() {
         if (!this._selGfx || !this._items.length) return;
         this._selGfx.clear();
@@ -419,6 +481,11 @@ export default class MenuScene extends Phaser.Scene {
         });
     }
 
+    /**
+     * Ejecuta la acción correspondiente a la opción seleccionada.
+     * Dependiendo del botón elegido, puede iniciar el juego,
+     * abrir récords, abrir el manual o salir.
+     */
     _confirm() {
         if (this._state!=="menu") return;
         const item = this._items[this._selIdx];
@@ -432,6 +499,12 @@ export default class MenuScene extends Phaser.Scene {
         }
     }
 
+    /**
+     * Inicia la partida.
+     * En dispositivos móviles intenta activar pantalla completa
+     * y bloquear la orientación en horizontal.
+     * Luego cambia a la escena principal del juego.
+     */
     _startGame() {
         if (this._isMob && document.documentElement.requestFullscreen) {
             document.documentElement.requestFullscreen()
@@ -442,6 +515,11 @@ export default class MenuScene extends Phaser.Scene {
         this.cameras.main.once("camerafadeoutcomplete", ()=> this.scene.start("GameScene"));
     }
 
+    /**
+     * Intenta cerrar la pestaña del navegador.
+     * Si el navegador no permite cerrar la ventana automáticamente,
+     * muestra un mensaje indicando al usuario que cierre la pestaña manualmente.
+     */
     _doExit() {
         this.cameras.main.fadeOut(600,0,0,0);
         this.time.delayedCall(650, ()=> {
