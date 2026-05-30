@@ -367,13 +367,17 @@ export default class MenuScene extends Phaser.Scene {
 
         // Footer
         const hs = localStorage.getItem("highScore")||0;
+        const nivelAlcanzado = localStorage.getItem("nivelAlcanzado") || 1;
+        const progresoMaximo = localStorage.getItem("progresoMaximo") || 0;
         const footY = my + totalH + pad + 14;
         this.add.text(cx, footY, this._isMob ? "Toca una opción para seleccionar" : "↑ ↓  Navegar     ENTER  Confirmar", {
             fontSize:`${this._fs(H,.019,11)}px`, color:"#112233", fontFamily:"monospace",
         }).setOrigin(.5);
-        const rec = this.add.text(cx, footY + this._fs(H,.038,22), `🏆  Récord: ${hs} pts`, {
-            fontSize:`${this._fs(H,.022,13)}px`, color:"#4d3500", fontFamily:"monospace", fontStyle:"bold",
-        }).setOrigin(.5);
+        const rec = this.add.text(cx,footY + this._fs(H,.038,22),
+            `🏆  Récord: ${hs} pts    |    🚀 Nivel alcanzado: ${nivelAlcanzado}`,
+            {  
+                fontSize:`${this._fs(H,.022,13)}px`,color:"#4d3500", fontFamily:"monospace", fontStyle:"bold",}).
+                setOrigin(.5);
         this.tweens.add({ targets:rec, alpha:{from:.6,to:1}, duration:1800, yoyo:true, repeat:-1, ease:"Sine.easeInOut" });
     }
 

@@ -72,6 +72,9 @@ export default class GameScene extends Phaser.Scene {
         this.score = 0;
         this.highScore = Number(localStorage.getItem("highScore")) || 0;
 
+        this.progresoMaximo = Number(localStorage.getItem("progresoMaximo")) || 0;
+        this.nivelAlcanzado = Number(localStorage.getItem("nivelAlcanzado")) || 1;
+
         this.fusiblesRecolectados = 0;
         this.maxFusibles = 2;
         this.fusiblesPorOleada = 3;
@@ -583,6 +586,7 @@ export default class GameScene extends Phaser.Scene {
             if (consoleObj.consoleType === "normal") {
                 this.consolasNormalesCompletadas++;
                 this.updateScore(100);
+                this.guardarProgreso();
 
                 const door = this.doors[consoleObj.consoleId];
 
@@ -603,6 +607,7 @@ export default class GameScene extends Phaser.Scene {
             if (consoleObj.consoleType === "global") {
                 this.consolasGlobalesCompletadas++;
                 this.updateScore(200);
+                this.guardarProgreso();
 
                 if (this.consolasGlobalesCompletadas >= 4) {
                     this.showVictory();
@@ -707,6 +712,7 @@ export default class GameScene extends Phaser.Scene {
 
     showVictory() {
         this.gameWon = true;
+        this.guardarProgreso();
         this.updateScore(500);
         this.saveHighScore();
         if (this.music?.isPlaying) this.music.stop();
@@ -715,6 +721,31 @@ export default class GameScene extends Phaser.Scene {
         this.player.body.setVelocity(0);
         this.victoryPanel.setVisible(true);
         this.input.once("pointerdown", () => this._restartGame());
+    }
+
+    guardarProgreso() {
+        const progresoActual =
+            this.consolasNormalesCompletadas + this.consolasGlobalesCompletadas;
+
+        if (progresoActual > this.progresoMaximo) {
+            this.progresoMaximo = progresoActual;
+            localStorage.setItem("progresoMaximo", this.progresoMaximo);
+        }
+
+        let nivelActual = 1;
+
+        if (this.consolasNormalesCompletadas >= this.totalConsolasNormales) {
+            nivelActual = 2;
+        }
+
+        if (this.consolasGlobalesCompletadas >= this.totalConsolasGlobales) {
+            nivelActual = 3;
+        }
+
+        if (nivelActual > this.nivelAlcanzado) {
+            this.nivelAlcanzado = nivelActual;
+            localStorage.setItem("nivelAlcanzado", this.nivelAlcanzado);
+        }
     }
 
     update() {
